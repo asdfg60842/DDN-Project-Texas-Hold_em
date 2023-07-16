@@ -4,8 +4,11 @@ class Player:
         self.__name = name
         self.__current_money = money
         self.__position = position
+
         self.__hand = []
+        self.__betting_history = []
         self.__round_result = None
+        
 
     def betting(self):
         """ Player 의 배팅 함수 """
@@ -30,8 +33,17 @@ class Community:
 
 class Card:
     """ Card 클래스 """
-    def __init__(self):
-        pass
+    def __init__(self, suit, rank):
+        self.suit = suit
+        self.rank = rank
+
+    @property
+    def suit(self):
+        return self.suit
+    
+    @property
+    def rank(self):
+        return self.rank
 
 class Deck:
     """ Deck 클래스 """

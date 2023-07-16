@@ -4,10 +4,13 @@ class Game:
     """ Game 클래스 """
 
     def __init__(self, num_people, blind_val, money, game_type):
-        self.NUM_PEOPLE = num_people
-        self.BLIND_VAL = blind_val
-        self.MONEY = money
-        self.GAME_TYPE = game_type
+        self.__NUM_PEOPLE = num_people
+        self.__BLIND_VAL = blind_val
+        self.__START_MONEY = money
+        self.__GAME_TYPE = game_type
+
+        self.players = []
+        self.community_card = []
 
     def start_sequence(self):
         """ 게임 시작 시퀀스 """
