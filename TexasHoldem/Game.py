@@ -1,5 +1,18 @@
 from Player import *
 
+class Start:
+    """ 게임 시작 클래스 """
+    def __init__(self):
+        self.set_game = self.game_setup()
+    
+    def game_setup(self):
+        self.num_people = int(input("게임 인원을 입력하세요 : "))
+        self.blind_val = int(input("블라인드 최소 배팅 금액을 입력하세요 : "))
+        self.money = int(input("초기 시작 금액을 입력하세요 : "))
+        self.game_type = input("게임 타입을 입력하세요 : ")
+
+        return Game(num_people = self.num_people, blind_val = self.blind_val, money = self.money, game_type = self.game_type)
+
 class Game:
     """ Game 클래스 """
 
@@ -12,9 +25,13 @@ class Game:
         self.players = []
         self.community_card = []
 
+        self.start_sequence()
+
     def start_sequence(self):
         """ 게임 시작 시퀀스 """
-        pass
+        self.players = self.init_player()
+        self.init_position()    
+
 
     def init_player(self):
         """ 플레이어 초기화 함수 """
