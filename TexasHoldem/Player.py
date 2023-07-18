@@ -1,7 +1,7 @@
 class Player:
     """ Player 클래스 """
-    def __init__(self, name, money, position):
-        self.__name = name
+    def __init__(self, name, money, position = 0):
+        self.name = name
         self.__current_money = money
         self.__position = position
 
@@ -16,7 +16,7 @@ class Player:
 
 class ComputerAI(Player):
     """ Computer 클래스 """
-    def __init__(self, name, money, position):
+    def __init__(self, name, money, position = 0):
         super().__init__(name, money, position)
 
     def betting(self):

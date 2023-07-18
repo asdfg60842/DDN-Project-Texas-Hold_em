@@ -1,4 +1,7 @@
 from Player import *
+import random 
+
+TBG_NAME_LIST = ["안병훈", "차희용", "이정우", "김민서", "김동원", "김영일", "권성우", "송정근", "이동규", "이승준"]
 
 class Start:
     """ 게임 시작 클래스 """
@@ -29,13 +32,27 @@ class Game:
 
     def start_sequence(self):
         """ 게임 시작 시퀀스 """
-        self.players = self.init_player()
-        self.init_position()    
-
+        self.init_player()
+        self.init_position()
+        self.init_round()
+        self.game_loop()
 
     def init_player(self):
         """ 플레이어 초기화 함수 """
-        pass
+        self.players.append(Player(input("너의 이름은 : "), self.__START_MONEY))
+        random.shuffle(TBG_NAME_LIST)
+        for i in range(self.__NUM_PEOPLE - 1):
+            self.players.append(ComputerAI(TBG_NAME_LIST[i], self.__START_MONEY))   
+
+        for i in range(self.__NUM_PEOPLE):
+            print(self.players[i].name)
+
+        print()
+
+        random.shuffle(self.players)
+        
+        for i in range(self.__NUM_PEOPLE):
+            print(self.players[i].name)
 
     def init_round(self):
         """ 라운드 초기화 함수 """
@@ -47,6 +64,9 @@ class Game:
     
     def reinit_position(self):
         """ 블라인드 재설정 함수 """
+        pass
+
+    def game_loop(self):
         pass
 
     def deal_preflop(self):
