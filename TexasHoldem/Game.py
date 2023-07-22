@@ -33,9 +33,9 @@ class Game:
         
         # 게임에 필요한 요소 선언 및 초기화
         self.game_deck = Deck()
+        self.community_cards = Community()
         self.dealer = -1
         self.players = []
-        self.community_card = []
         
         # 게임 시작 시퀀스 실행
         self.start_sequence()
@@ -73,6 +73,7 @@ class Game:
         self.dealer += 1
         self.game_deck.init_deck()
         self.game_deck.shuffled_deck()
+        self.community_cards.init_community_cards()
 
     #def init_position(self):
     #    """ 블라인드 초기화 함수 """

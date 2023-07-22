@@ -12,6 +12,7 @@ class Player:
 
     def betting(self):
         """ Player 의 배팅 함수 """
+        print("bet")
         pass
 
 class ComputerAI(Player):
