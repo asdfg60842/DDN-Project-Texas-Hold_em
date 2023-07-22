@@ -5,14 +5,17 @@ class Community:
     def __init__(self):
         self.community_cards = []
 
+    def init_community_cards(self):
+        self.community_cards = []
+        
     def add_card(self, aCard):
         self.community_cards.append(aCard)
 
 class Card:
     """ Card 클래스 """
     def __init__(self, suit, rank):
-        self.suit = suit
-        self.rank = rank
+        self.__suit = suit
+        self.__rank = rank
 
     @property
     def suit(self):
