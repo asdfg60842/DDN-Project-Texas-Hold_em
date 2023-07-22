@@ -2,8 +2,6 @@ from Game import *
 
 def main():
     """ 메인 함수 """
-    game_start = Start()
-
     # 게임 시작
     game_start = Start()
 

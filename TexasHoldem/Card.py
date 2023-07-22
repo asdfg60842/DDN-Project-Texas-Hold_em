@@ -2,14 +2,18 @@ import random
 
 class Community:
     """ Community 클래스 """
-    def __init__(self):
+    def init(self):
         self.community_cards = []
 
     def init_community_cards(self):
         self.community_cards = []
-        
+
     def add_card(self, aCard):
         self.community_cards.append(aCard)
+
+    @property
+    def community_cards(self):
+        return self.community_cards
 
 class Card:
     """ Card 클래스 """
@@ -31,9 +35,9 @@ class Deck:
         self.deck_cards = []
 
     def init_deck(self):
-        for i in (0, 4):
-            for j in (0, 13):
-                self.deck_cards.append(Card(i, j))
+        for suit in (0, 4):
+            for rank in (1, 14):
+                self.deck_cards.append(Card(suit, rank))
 
     def shuffled_deck(self):
         random.shuffle(self.deck_cards)
