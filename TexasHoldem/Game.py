@@ -147,6 +147,7 @@ class Game:
 
     def show_down(self):
         """ 쇼다운(승자 결정) 단계 """
+
         pass
     
     def bet_in_order(self):

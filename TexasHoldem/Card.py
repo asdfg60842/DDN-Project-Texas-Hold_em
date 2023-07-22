@@ -38,7 +38,7 @@ class Deck:
         self.deck_cards = []
 
         for i in range(0, 4):
-            for j in range(0, 13):
+            for j in range(1, 14):
                 self.deck_cards.append(Card(i, j))
 
     def shuffled_deck(self):
