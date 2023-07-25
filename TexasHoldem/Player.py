@@ -21,9 +21,6 @@ class Player:
 
     def add_card(self, aCard):
         self.__hand.append(aCard)
-        self.__round_result = []
-        self.whole_cards = []
-        self.ranking = []
 
     def show_down(self, community_cards):
         self.whole_cards.append(self.__hand)
@@ -31,57 +28,91 @@ class Player:
 
         self.whole_cards.sort(key = lambda own_card: own_card.rank)
 
-        # 족보 판단하는 함수 - 해당 족보의 갯수와 숫자를 저장 ex) 7, 5 투페어: is_pair = [2, 7, 5]
+        # 족보 판단하는 변수 - 해당 족보의 갯수와 숫자를 저장 ex) 7, 5 투페어: is_pair = [2, 7, 5]
+        is_straightflush = [0]
         is_fourcard = [0]
         is_flush = [0]
         is_straight = [0]
         is_triple = [0]
         is_pair = [0]
 
-        # 플러쉬 판단
-        # 문양 갯수 세는 변수
-        suit_num = [0, 0, 0, 0]
+        # 스티플, 플러쉬 판단
+        def straightflush_flush_func(card_list):
+            # 문양 갯수 세는 변수
+            suit_num = [0, 0, 0, 0]
 
-        for i in range(7):
-            suit_num[self.whole_cards[i].suit] += 1
-        for i in range(4):
-            if suit_num[i] >= 5: is_flush[0] = 1
-            if self.whole_cards[6].suit == i: is_flush[1] = self.whole_cards[6].rank
-            elif self.whole_cards[5].suit == i: is_flush[1] = self.whole_cards[5].rank
-            elif self.whole_cards[4].suit == i: is_flush[1] = self.whole_cards[4].rank
+            for i in range(7):
+                suit_num[card_list[i].suit] += 1
+            for i in range(4):
+                if suit_num[i] >= 5: is_flush[0] = 1
+
+                flush_list = []
+                for j in range(7):
+                    if card_list[j].suit == i: flush_list.append(card_list[j])
+                straight_func(flush_list)
+                if is_straight[0] == 1:
+                    is_straightflush = is_straight
+                    is_straightflush[0] = 1
+
+                for j in range(len(flush_list) - 1, -1, -1):
+                    is_flush.append(flush_list[j].rank)
 
         # 스트레이트 판단
-        whole_list = []
-        whole_set_list = []
-        for i in range(7):
-            whole_list.append(self.whole_cards[i].rank)
-        whole_set_list = list(set(self.whole_list))
-        continuity = 1
-        for i in range(1, len(whole_set_list)):
-            if whole_set_list[i] == whole_set_list[i - 1] + 1: continuity += 1
-            else: continuity = 1
+        def straight_func(card_list):
+            continuity = 1
 
-            if continuity >= 5:
-                is_straight[0] = 1
-                is_straight[1] = whole_set_list[i]
+            for i in range(7):
+                if card_list[i].rank == card_list[i - 1].rank + 1: continuity += 1
+                elif card_list[i].rank != card_list[i - 1].rank: continuity = 1
+
+                if continuity >= 5:
+                    is_straight[0] = 1
+                    is_straight[1] = card_list[i].rank
+                    for j in range(1, 5):
+                        is_straight.append(card_list[i - j].rank)
 
         # 페어, 트리플, 포카드 판단
-        counter = {}
+        def pair_triple_fourcard_func(card_list):
+            counter = {}
+            whole_list = []
+            for i in range(7):
+                whole_list.append(card_list[i].rank)
 
-        for num in whole_list:
-            try: counter[num] += 1
-            except: counter[num] = 1
+            for num in whole_list:
+                try: counter[num] += 1
+                except: counter[num] = 1
 
-        for num in counter.keys:
-            if counter[num] == 2:
-                is_pair[0] += 1
-                is_pair.insert(1, num)
-            if counter[num] == 3:
-                is_triple[0] += 1
-                is_triple.insert(1, num)
-            if counter[num] == 4:
-                is_fourcard[0] += 1
-                is_fourcard.append(num)
+            for num in counter.keys:
+                if counter[num] == 2:
+                    is_pair[0] += 1
+                    is_pair.insert(1, num)
+                if counter[num] == 3:
+                    is_triple[0] += 1
+                    is_triple.insert(1, num)
+                if counter[num] == 4:
+                    is_fourcard[0] += 1
+                    is_fourcard.append(num)
+
+            if is_pair[0] == 1:
+                for i in range(6, -1, -1):
+                    if card_list[i].rank != is_pair[1]:
+                        is_pair.append(card_list[i])
+            if is_pair[0] == 2:
+                for i in range(6, -1, -1):
+                    if card_list[i].rank != is_pair[1] and card_list[i].rank != is_pair[2]:
+                        is_pair.append(card_list[i])
+            if is_triple[0] == 1:
+                for i in range(6, -1, -1):
+                    if card_list[i].rank != is_tirple[1]:
+                        is_triple.append(card_list[i])
+            if is_fourcard[0] == 1:
+                for i in range(6, -1, -1):
+                    if card_list[i].rank != is_fourcard[1]:
+                        is_fourcard.append(card_list[i])
+
+        straightflush_flush_func(self.whole_cards)
+        straight_func(self.whole_cards)
+        pair_triple_fourcard_func(self.whole_cards)
 
         # return ranking
         # straight flush : 8
@@ -93,13 +124,10 @@ class Player:
         # two pair : 2
         # one pair : 1
         # top : 0
-        if is_flush[0] == 1 and is_straight[0] == 1:
-            # 이렇게 하면 안됨
-            # 스트레이트인 카드가 플러쉬이어야 해서 다시 비교해야됨 ㅠㅠ
-            # A가 가장 큰 값으로 설정해서 로티플도 추가해야됨
-            return []
+        if is_straightflush[0] == 1:
+            self.ranking = [8, is_straightflush[1]]
         elif is_fourcard[0] == 1:
-            self.ranking = [7, is_fourcard[1]]
+            self.ranking = [7, is_fourcard[1], fourcard[2]]
         elif is_triple[0] == 1 and is_pair[0] >= 1:
             self.ranking = [6, is_triple[1], is_pair[1]]
         elif is_triple[0] == 2:
@@ -109,15 +137,19 @@ class Player:
         elif is_straight[0] == 1:
             self.ranking = [4, is_straight[1]]
         elif is_triple[0] == 1:
-            self.ranking = [3, is_triple[1]]
-        # 페어가 3개인 경우 추가해야함
+            self.ranking = [3, is_triple[1], is_triple[2]]
+        elif is_pair[0] == 3:
+            self.ranking = [2, is_pair[1], is_pair[2], is_pair[3]]
         elif is_pair[0] == 2:
-            self.ranking = [2, is_pair[1], is_pair[2]]
+            self.ranking = [2, is_pair[1], is_pair[2], is_pair[3]]
         elif is_pair[0] == 1:
-            self.ranking = [1, is_pair[1]]
+            self.ranking = [1, is_pair[1], is_pair[2], is_pair[3], is_pair[4]]
         else:
             self.ranking = [0]
-        # 각 족보에서 5장 이하인 것들은 족보를 제외한 탑 카드들 비교해야함
+            for i in range(6, 1, -1):
+                self.ranking.append(self.whole_cards[i].rank)
+
+
 
     def bet(self, blind_bet = None):
         """ Player 의 배팅 함수 """
