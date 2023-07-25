@@ -7,7 +7,7 @@ class Community:
 
     def init_community_cards(self):
         self.__community_cards = []
-        
+
     def add_card(self, aCard):
         self.__community_cards.append(aCard)
 

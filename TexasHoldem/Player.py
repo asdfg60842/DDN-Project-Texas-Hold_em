@@ -9,7 +9,8 @@ class Player:
         self.__game_status = "Alive"
         self.__bet_status = None
         self.__betting_history = []
-        self.__round_result = None
+
+        self.__round_result = []
         self.whole_cards = []
         self.ranking = []
 
