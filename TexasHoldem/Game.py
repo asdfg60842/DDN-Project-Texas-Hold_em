@@ -50,7 +50,6 @@ class Game:
         게임 시작 전 플레이어 정보, 라운드 초기화
         """
         self.init_player()
-        #self.init_position()
         self.init_round()
         self.game_process()
         
@@ -61,15 +60,7 @@ class Game:
         random.shuffle(TBG_NAME_LIST)
         for i in range(1, self.__NUM_PLAYER):
             self.players.append(Player(TBG_NAME_LIST[i], self.__START_MONEY))   
-
-        #for i in range(self.__NUM_PLAYER):
-        #    print(self.players[i].name)
-        #print()
-
         random.shuffle(self.players)
-        
-        #for i in range(self.__NUM_PLAYER):
-        #    print("{}. {}".format(i ,self.players[i].name))
 
     def init_round(self):
         """ 라운드 초기화 함수 """
@@ -84,7 +75,7 @@ class Game:
         for player in self.players:
             if (player.game_status == "Alive"):
                 player.init_hand()
-                player.init_bet_status()
+                player.init_history()
             elif (player.game_status == "Die"):
                 self.players.remove(player)
                 self.current_num_player -= 1
@@ -106,7 +97,7 @@ class Game:
             self.deal_turn()
             self.deal_river()
             self.show_down()
-
+            print("승자는 총 {} 만큼의 상금을 얻었습니다!".format(self.pot.pot_money))
             self.init_round()        
 
     def deal_blind(self):
@@ -191,6 +182,8 @@ class Game:
         get_bet_value = None
         # 배팅을 다시해야하는 경우의 시작 순서
         bet_again = None
+        # 게임 state에 걸린 pot
+        state_pot = 0
 
         # preflop : 빅블라인드 다음 사람 ~ 마지막 index 플레이어까지 배팅
         # flop, turn, river : 스몰블라인드 ~ 마지막 index 플레이어까지 배팅
@@ -211,19 +204,22 @@ class Game:
             if state == "preflop" and i == order:
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Call")
                 bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)   
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = bet_val, bet_amount = bet_amount_val)   
             # 공통 제한사항 : 만약 이전 플레이어가 Raise를 했을 경우 다음 플레이어는 Call/Bet/All-In/Fold의 선택지를 가짐
             # Raise를 선택한 플레이어의 이전에 배팅했던 플레이어는 다시 배팅을 진행해야함
             elif get_bet_value == "Raise":
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Raise")
                 bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = bet_val, bet_amount = bet_amount_val)
             # 공통 제한사항 : Raise와 같은 경우
             # 단, Bet을 선택했을 경우 이전에 Raise한 플레이어도 다시 배팅을 진행해야함
             elif get_bet_value == "Bet":
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Bet")
                 bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = bet_val, bet_amount = bet_amount_val)
             # 가장 처음 배팅을 하게되는 스몰블라인드의 경우 Check가 가능함
             # 따라서 모든 플레이어가 Check를 했는지 또는 한 플레이어가 Raise를 했는지 판단하여 선택지 호출
             else:
@@ -243,13 +239,15 @@ class Game:
                 if is_check_available == 1 and state != "preflop":
                     bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Check")
                     bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val)
                 # is_check_available == 0인 경우 Call 선택지 호출
                 else: 
                     bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Call")
                     bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
-
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val)
+            
             # 플레이어 배팅 loop 에서 Fold나 Check를 선택한 경우 배팅 금액을 입력하지 않기 때문에 최소 배팅금액인 min_amount_val 비교에서 제외
             # 즉, 플레이어 중 Raise 또는 Bet을 선택한 플레이어가 배팅한 금액이 최소 배팅금액이 됨
             if bet_val != "Fold" and bet_val != "Check" and bet_val != None:
@@ -276,11 +274,13 @@ class Game:
             if get_bet_value == "Raise":
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Raise")
                 bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = bet_val, bet_amount = bet_amount_val)
             elif get_bet_value == "Bet":
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Bet")
                 bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = bet_val, bet_amount = bet_amount_val)
             # preflop에서 마지막 순서인 빅블라인드는 이전 배팅에서 Raise, Bet이 없을 경우 Check가 가능함
             else:
                 is_check_available = 1
@@ -304,12 +304,14 @@ class Game:
                 if is_check_available == 1:
                     bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Check")
                     bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val)
                 else: 
                     bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Call")
                     bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_amount_val)
-                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val)
-
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val)
+            
             if bet_val != "Fold" and bet_val != "Check" and bet_val != None:
                 if min_amount_val < bet_amount_val:
                     min_amount_val = bet_amount_val
@@ -321,38 +323,52 @@ class Game:
         if bet_again != None:
             if bet_again == order:
                 return
-            elif bet_again > order:
+            else:
                 self.bet_in_again(order1 = order, order2 = bet_again, state = state, min_val = min_amount_val)
-            elif bet_again < order:
-                self.bet_in_again(order1 = order, order2 = bet_again, state = state, min_val = min_amount_val)
+        # 다시 배팅을 진행하지 않는 경우 state에 걸린 pot을 라운드 전체 pot에 더한다
+        else:
+            self.player_bet_log.add_state_result_log(nround = self.num_round, game_state = state)
+            
+            for i in range(self.current_num_player):
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = self.players[i].bet_status, bet_amount = self.players[i].get_bet_amount(game_state = state), \
+                                                bet_n = 1, str_bet_n = "result")
+                state_pot += self.players[i].get_bet_amount(game_state = state)
+            self.pot.pot_money += state_pot
 
     # 해당 함수를 조건부 재귀호출로 사용
     def bet_in_again(self, order1, order2, state, min_val, n = 2):
         """ Raise, Bet이 있는 경우 다시 배팅 진행 """
         # Raise 또는 Bet을 선택하는 플레이어의 인덱스 저장 변수
         bet_again = None
+        # 게임 state에 걸린 pot
+        state_pot = 0
         # 배팅 라운드 횟수를 기록하기 위한 str
         bet_num = "bet" + str(n)
         # 배팅 라운드가 증가하였으므로 bet_num을 키(key)로 하여 dict 생성
-        self.player_bet_log.add_state_log_again(nround = self.num_round, game_state = state, bet_n = bet_num)
+        self.player_bet_log.add_state_log_again(nround = self.num_round, game_state = state, str_bet_n = bet_num)
 
         # Raise 또는 Bet을 선택한 플레이어가 있는 위치에 따라 배팅 순서가 분기됨
         if order1 < order2 :
             for i in range(order1, order2):
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Bet", again = True)
-                bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_val, again = True)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
+                bet_amount_val = self.players[i].bet_again(game_state = state, min_amount = min_val)
+                if bet_val != None:
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
         
                 if bet_val == "Raise" or bet_val == "Bet":
                     if min_val < bet_amount_val:
                         min_val = bet_amount_val
                     bet_again = i
-
+                    
         elif order1 > order2:
             for i in range(order1, self.current_num_player):
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Bet", again = True)
-                bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_val, again = True)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
+                bet_amount_val = self.players[i].bet_again(game_state = state, min_amount = min_val)
+                if bet_val != None:
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
         
                 if bet_val == "Raise" or bet_val == "Bet":
                     if min_val < bet_amount_val:
@@ -361,8 +377,10 @@ class Game:
 
             for i in range(0, order2):
                 bet_val = self.players[i].select_bet(game_state = state, std_bet_select = "Bet", again = True)
-                bet_amount_val = self.players[i].bet(game_state = state, min_amount = min_val, again = True)
-                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
+                bet_amount_val = self.players[i].bet_again(game_state = state, min_amount = min_val)
+                if bet_val != None:
+                    self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                    bet = bet_val, bet_amount = bet_amount_val, bet_n = n - 1, str_bet_n = bet_num)
         
                 if bet_val == "Raise" or bet_val == "Bet":
                     if min_val < bet_amount_val:
@@ -371,11 +389,28 @@ class Game:
 
         # bet_again 변수에 int값이 저장되었을 경우 재귀호출
         if bet_again != None:
-            self.bet_in_again(order = bet_again, state = state, min_val = min_val, n = n + 1)
+            self.bet_in_again(order1 = order2, order2 = bet_again, state = state, min_val = min_val, n = n + 1)
+        else:
+            self.player_bet_log.add_state_result_log(nround = self.num_round, game_state = state)
+            
+            for i in range(self.current_num_player):
+                self.player_bet_log.add_bet_log(nround = self.num_round, game_state = state, player_name = self.players[i].name, \
+                                                bet = self.players[i].bet_status, bet_amount = self.players[i].get_bet_amount(game_state = state), \
+                                                bet_n = n, str_bet_n = "result")
+                state_pot += self.players[i].get_bet_amount(game_state = state)
+            self.pot.pot_money += state_pot
 
 class Pot:
     def __init__(self):
-        self.pot_money = 0
+        self.__pot_money = 0
+    
+    @property
+    def pot_money(self):
+        return self.__pot_money
+    
+    @pot_money.setter
+    def pot_money(self, val):
+        self.__pot_money = val
 
 class BetLog:
     """ Player 배팅 기록 클래스 """
@@ -399,9 +434,12 @@ class BetLog:
             "bet_amount" : bet_amount
         }
     
-    def add_state_log_again(self, nround, game_state, bet_n):
+    def add_state_log_again(self, nround, game_state, str_bet_n):
         """ 각 게임 단계의 2차 3차 배팅이 진행되었을 경우 list안에 dict 추가 """
-        self.__bet_log[nround][game_state].append({ bet_n : {} })
+        self.__bet_log[nround][game_state].append({ str_bet_n : {} })
+        
+    def add_state_result_log(self, nround, game_state):
+        self.__bet_log[nround][game_state].append({ "result" : {} })
     
     @property
     def bet_log(self):

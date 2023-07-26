@@ -8,16 +8,21 @@ class Player():
         self.hand = []
         self.__game_status = "Alive"
         self.bet_status = None
-        self.betting_history = []
         self.round_result = None
+        self.betting_history = []
         self.whole_cards = []
         self.ranking = []
 
     def init_hand(self):
         self.hand = []
 
-    def init_bet_status(self):
+    def init_history(self):
+        self.position = 0
         self.bet_status = None
+        self.round_result = None
+        self.betting_history = []
+        self.whole_cards = []
+        self.ranking = []
 
     def add_card(self, aCard):
         self.hand.append(aCard)
@@ -161,10 +166,10 @@ class Player():
         # 플레이어의 이전 선택지가 Fold 또는 All-In일 경우 배팅을 진행할 필요가 없기 때문에 None 리턴
         if self.bet_status == "Fold":
             print("플레이어가 Fold 하여 다음 순서로 넘어갑니다.")
-            return
+            return None
         elif self.bet_status == "All-In":
             print("플레이어가 All-In 하여 다음 순서로 넘어갑니다.")
-            return
+            return "All-In"
         
         # std_bet_select에 의해 선택지가 분기됨
         # 이 변수는 Game.py의 Game().bet_in_order()에 의해 기준값이 전달됨
@@ -211,53 +216,44 @@ class Player():
         # 배팅의 기본값은 블라인드 값으로 설정
         if min_amount == None:
             min_amount = blind_bet
-
+    
         if game_state == "blind":
             self.betting_history.append([game_state, "blind", blind_bet])
             self.current_money -= blind_bet
             self.position = blind_bet
             return blind_bet
+            
         if self.bet_status == "Fold":
-            self.betting_history.append([game_state, self.bet_status, None])
-            return "Fold"
+            self.betting_history.append([game_state, self.bet_status, 0])
+            return 0
         elif self.bet_status == "Check":
             self.betting_history.append([game_state, self.bet_status, 0])
-            return "Check"
+            return 0
         elif self.bet_status == "Call":
-            # 다시 배팅을 진행하는지를 판단하는 again 변수로 Raise된 값에 이전 배팅한 값을 차감하여 배팅
-            if again == True:
-                extra_pay = min_amount - self.betting_history[len(self.betting_history) - 1][2]
-                self.betting_history.append([game_state, self.bet_status, extra_pay])
-                self.current_money -= extra_pay
-            # 혹은 플레이어가 블라인드인 경우 preflop 단계에서 블라인드 값을 차감하고 배팅 진행
-            elif self.position != 0 and game_state == "preflop":
-                self.betting_history.append([game_state, self.bet_status, min_amount - self.position])
-                self.current_money = min_amount - self.position
+            if self.position != 0 and game_state == "preflop":
+                diff = min_amount - self.position
+                self.betting_history.append([game_state, self.bet_status, diff])
+                self.current_money -= diff
             else:
                 self.betting_history.append([game_state, self.bet_status, min_amount])
                 self.current_money -= min_amount
+                    
             return min_amount
         elif self.bet_status == "Raise" or self.bet_status == "Bet":
-            # Call과 동일
-            if again == True:
+            if self.position != 0 and game_state == "preflop":
                 bet_amount = int(input("배팅할 금액을 입력하세요(최소 금액 {} 초과) : ".format(min_amount)))
                 while bet_amount < min_amount:
                     bet_amount = int(input("배팅할 금액은 {} 초과되어야 합니다. 다시 입력해주세요 : ".format(min_amount)))
-                extra_pay = bet_amount - self.betting_history[len(self.betting_history) - 1][2]
-                self.betting_history.append([game_state, self.bet_status, extra_pay])
-                self.current_money -= extra_pay
-            elif self.position != 0 and game_state == "preflop":
-                bet_amount = int(input("배팅할 금액을 입력하세요(최소 금액 {} 초과) : ".format(min_amount)))
-                while bet_amount < min_amount:
-                    bet_amount = int(input("배팅할 금액은 {} 초과되어야 합니다. 다시 입력해주세요 : ".format(min_amount)))
-                self.betting_history.append([game_state, self.bet_status, bet_amount - self.position])
-                self.current_money = bet_amount - self.position
-            else:
+                diff = bet_amount - self.position
+                self.betting_history.append([game_state, self.bet_status, diff])
+                self.current_money -= diff
+            else:   
                 bet_amount = int(input("배팅할 금액을 입력하세요(최소 금액 {} 초과) : ".format(min_amount)))
                 while bet_amount < min_amount:
                     bet_amount = int(input("배팅할 금액은 {} 초과되어야 합니다. 다시 입력해주세요 : ".format(min_amount)))
                 self.betting_history.append([game_state, self.bet_status, bet_amount])
                 self.current_money -= bet_amount
+                    
             return bet_amount
         elif self.bet_status == "All-In":
             bet_amount = self.current_money
@@ -265,6 +261,45 @@ class Player():
             self.current_money -= bet_amount
             return bet_amount
 
+    def bet_again(self, game_state = None, min_amount = None):
+        if self.bet_status == "Fold":
+            self.betting_history.append([game_state, self.bet_status, 0])
+            return 0
+        elif self.bet_status == "Call":
+            diff = min_amount
+            for state, _, amount in self.betting_history:
+                if state == "blind" and game_state == "preflop":
+                    diff -= amount
+                elif state == game_state:
+                    diff -= amount
+            self.betting_history.append([game_state, self.bet_status, diff])
+            self.current_money -= diff
+            return min_amount
+        elif self.bet_status == "Raise" or self.bet_status == "Bet":
+            bet_amount = int(input("배팅할 금액을 입력하세요(최소 금액 {} 초과) : ".format(min_amount)))
+            while bet_amount < min_amount:
+                bet_amount = int(input("배팅할 금액은 {} 초과되어야 합니다. 다시 입력해주세요 : ".format(min_amount)))
+                
+            diff = bet_amount
+            for state, _, amount in self.betting_history:
+                if state == "blind" and game_state == "preflop":
+                    diff -= amount
+                elif state == game_state:
+                    diff -= amount
+            self.betting_history.append([game_state, self.bet_status, diff])
+            self.current_money -= diff
+            return bet_amount
+
+    def get_bet_amount(self, game_state):
+        state_amount = 0
+        for state, _, amount in self.betting_history:
+            if state == "blind" and game_state == "preflop":
+                state_amount += amount
+            elif state == game_state:
+                state_amount += amount
+        
+        return state_amount
+        
     @property
     def game_status(self):
         return self.__game_status
