@@ -25,14 +25,14 @@ class Player():
     def add_card(self, aCard):
         self.hand.append(aCard)
 
-    def action_bet(self, game_state = None, std_bet_action = None, again = False):
+    def action_bet(self, game_state = None, std_bet_action = None, min_amount = None, again = False):
         """ Player 의 베팅 선택 함수 """
         # 임시 출력(결과 확인을 위함)
         print()
         if again == True:
             print("누군가 Raise 하여 다시 베팅합니다.")
         print(self.betting_history)
-        print("{} : {} 님의 베팅 순서입니다.".format(game_state, self.name))
+        print("{} : {} 님의 베팅 순서입니다.\t현재 보유 머니 : {}".format(game_state, self.name, self.current_money))
         print("HAND : {} {}, {} {}".format(self.hand[0].suit, self.hand[0].rank, self.hand[1].suit, self.hand[1].rank))
         
         # 플레이어의 이전 선택지가 Fold 또는 All-In일 경우 베팅을 진행할 필요가 없기 때문에 None 리턴
@@ -42,46 +42,62 @@ class Player():
         elif self.bet_status == "All-In":
             print("플레이어가 All-In 하여 다음 순서로 넘어갑니다.")
             return "All-In"
+        elif self.bet_status == "SideBet":
+            print("플레이어가 All-In(SideBet) 하여 다음 순서로 넘어갑니다.")
+            return "SideBet"
+        
+        if min_amount != None and self.current_money < min_amount:
+            print("현재 보유 금액이 최소 베팅 금액보다 작아 사이드 베팅이 가능합니다.")
+            action = int(input("베팅하세요 : 1. Call(All-In)\t2. Fold : "))
+            return self.set_bet_status(bet = std_bet_action, action_val = action, side_bet = True)
         
         # std_bet_action에 의해 선택지가 분기됨
         # 이 변수는 Game.py의 Game().bet_in_order()에 의해 기준값이 전달됨
         if std_bet_action == "Raise" or std_bet_action == "Bet":
-            select = int(input("베팅하세요 : 1. Call\t2. Bet\t3. All-In\t4. Fold : "))
-            return self.set_bet_status(bet = std_bet_action, val = select)
+            action = int(input("베팅하세요 : 1. Call\t2. Bet\t3. All-In\t4. Fold : "))
+            return self.set_bet_status(bet = std_bet_action, action_val = action)
         elif std_bet_action == "Call":
-            select = int(input("베팅하세요 : 1. Call\t2. Raise\t3. All-In\t4. Fold : "))
-            return self.set_bet_status(bet = std_bet_action, val = select)
+            action = int(input("베팅하세요 : 1. Call\t2. Raise\t3. All-In\t4. Fold : "))
+            return self.set_bet_status(bet = std_bet_action, action_val = action)
         elif std_bet_action == "Check":
-            select = int(input("베팅하세요 : 1. Check\t2. Raise\t3. All-In\t4. Fold : "))
-            return self.set_bet_status(bet = std_bet_action, val = select)
+            action = int(input("베팅하세요 : 1. Check\t2. Raise\t3. All-In\t4. Fold : "))
+            return self.set_bet_status(bet = std_bet_action, action_val = action)
         print()
     
-    def set_bet_status(self, bet, val):
+    def set_bet_status(self, bet, action_val, side_bet = False):
         """ 플레이어가 Console로 입력한 값을 self.bet_status에 저장하고 str로 반환하는 함수 """
-        if bet == "Check":
-            if val == 1:
-                self.bet_status = "Check"
-                return "Check"
+        if side_bet == True:
+            if action_val == 1:
+                self.bet_status = "SideBet"
+                return "SideBet"
+            elif action_val == 2:
+                self.bet_status = "Fold"
+                return "Fold"
         else:
-            if val == 1:
-                self.bet_status = "Call"
-                return "Call"
+            if bet == "Check":
+                if action_val == 1:
+                    self.bet_status = "Check"
+                    return "Check"
+            else:
+                if action_val == 1:
+                    self.bet_status = "Call"
+                    return "Call"
         
-        if bet == "Raise" or bet == "Bet":
-            if val == 2:
-                self.bet_status = "Bet"
-                return "Bet"
-        else:
-            if val == 2:
-                self.bet_status = "Raise"
-                return "Raise"
+            if bet == "Raise" or bet == "Bet":
+                if action_val == 2:
+                    self.bet_status = "Bet"
+                    return "Bet"
+            else:
+                if action_val == 2:
+                    self.bet_status = "Raise"
+                    return "Raise"
         
-        if val == 3:
-            self.bet_status = "All-In"
-            return "All-In"
-        elif val == 4:
-            self.bet_status = "Fold"
-            return "Fold"
+            if action_val == 3:
+                self.bet_status = "All-In"
+                return "All-In"
+            elif action_val == 4:
+                self.bet_status = "Fold"
+                return "Fold"
         
     def bet(self, blind_bet = None, game_state = None, min_amount = None, again = False):
         """ Player 의 베팅 함수 """
@@ -127,13 +143,14 @@ class Player():
                 self.current_money -= bet_amount
                     
             return bet_amount
-        elif self.bet_status == "All-In":
+        elif self.bet_status == "All-In" or self.bet_status == "SideBet":
             bet_amount = self.current_money
             self.betting_history.append([game_state, self.bet_status, bet_amount])
             self.current_money -= bet_amount
             return bet_amount
 
     def bet_again(self, game_state = None, min_amount = None):
+        """ Player 의 N차 배팅 함수 """
         if self.bet_status == "Fold":
             self.betting_history.append([game_state, self.bet_status, 0])
             return 0
@@ -162,15 +179,25 @@ class Player():
             self.current_money -= diff
             return bet_amount
 
-    def get_bet_amount(self, game_state):
-        state_amount = 0
-        for state, _, amount in self.betting_history:
-            if state == "blind" and game_state == "preflop":
-                state_amount += amount
-            elif state == game_state:
-                state_amount += amount
+    def get_bet_amount(self, game_state = None, get_all = False):
+        """ Player 가 배팅한 금액 총합 """
+        if get_all != True:
+            state_amount = 0
+            for state, _, amount in self.betting_history:
+                if state == "blind" and game_state == "preflop":
+                    state_amount += amount
+                elif state == game_state:
+                    state_amount += amount
         
-        return state_amount
+            return state_amount
+        else:
+            round_amount = 0
+            round_status = None
+            for _, status, amount in self.betting_history:
+                round_amount += amount
+                round_status = status
+                
+            return round_amount, round_status
         
     @property
     def game_status(self):
