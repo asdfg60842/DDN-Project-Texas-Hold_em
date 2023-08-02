@@ -19,8 +19,6 @@ class Player():
         self.bet_status = None
         self.round_result = None
         self.betting_history = []
-        self.whole_cards = []
-        self.ranking = []
 
     def add_card(self, aCard):
         self.hand.append(aCard)

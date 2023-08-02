@@ -97,10 +97,11 @@ class Game:
             self.deal_turn()
             self.deal_river()
             self.show_down()
-            print("승자는 총 {} 만큼의 상금을 얻었습니다!".format(self.pot.pot_money))
+
             self.init_round()        
 
     def deal_blind(self):
+        """ 블라인드 베팅 단계 """
         self.small_blind = (self.dealer + 1) % self.current_num_player
         self.big_blind = (self.dealer + 2) % self.current_num_player
 
@@ -134,7 +135,7 @@ class Game:
 
         # 베팅 기록을 위한 단계별 키(key) 생성
         self.players_bet_log.add_state_log(nround = self.num_round, game_state = "preflop")
-
+ 
         # UTG(언더 더 건) 부터 IP(인 포지션 : big_blind)까지 베팅
         self.bet_in_order(order = under_the_gun, state = "preflop")
         
@@ -197,22 +198,30 @@ class Game:
         for player in self.players:
             amount, player_status = player.get_bet_amount(get_all = True)
             round_result.append([player, amount, player_status])
-
+            
             if player_status == "SideBet":
                 if amount not in side_pot:
-                    side_pot.append(amount)
+                    side_pot.append([amount, 1])
+                else:
+                    for i in range(side_pot):
+                        if side_pot[i][0] == amount:
+                            side_pot[i][1] += 1
                 side_bet_player.append(player)
             elif player_status != "Fold":
                 if amount not in side_pot:
                     side_pot.append(amount)
+                else:
+                    for i in range(side_pot):
+                        if side_pot[i][0] == amount:
+                            side_pot[i][1] += 1
                 side_bet_player.append(player)
                 default_bet_player.append(player)
             elif player_status == "Fold":
                 fold_pot.append([amount])
         
-        side_pot.sort()
+        side_pot.sort(key = lambda x: x[0])
         for i in range(len(side_pot), 1, -1):
-            side_pot[i] -= side_pot[i - 1]
+            side_pot[i][0] -= side_pot[i - 1][0]
         
         for i in range(len(fold_pot)):
             for j in range(len(side_pot)):
@@ -227,8 +236,16 @@ class Game:
             if 0 in fold_pot[i]:
                 fold_pot[i].remove(0)
         
-        # 사이드팟 중복 인원 수 카운트
-        # 사이드팟에 해당하는 플레이어 수 만큼 곱 연산 후 폴드 팟 + 연산 하여 final_pot 완성
+        for i in range(side_pot):
+            if i == 0:
+                pot = side_pot[i][0] * len(side_bet_player) + fold_pot[i]
+            elif i <= len(fold_pot):
+                pot = side_pot[i][0] * (len(side_bet_player) - side_pot[i - 1][1]) + fold_pot[i]
+            else:
+                pot = side_pot[i][0] * (len(side_bet_player) - side_pot[i - 1][1])
+
+            final_pot.append(pot)
+        
         # 이후 showdown으로 각 사이드팟에 해당하는 플레이어 비교
                     
         
